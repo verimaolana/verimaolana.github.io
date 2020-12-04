@@ -20,7 +20,7 @@ doCORSRequest({
         method: 'GET',
         url: 'https://indosatu.me/watch/jXJIjBCpj5Q'
       }, function printResult(result){
-      $b = result.find('div#content .row .video-info .stats h6').text();
+      $b = $(result).find('div#content .row .video-info .stats h6').text();
 $("body").text($b);
       });
 </script>
