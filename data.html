@@ -1,0 +1,27 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><script src='../asset/jquery.js'></script>
+<script>
+  var cors_api_url = 'https://cors-anywhere.herokuapp.com/';
+  function doCORSRequest(options, printResult) {
+    var x = new XMLHttpRequest();
+    x.open(options.method, cors_api_url + options.url);
+    x.onload = x.onerror = function() {
+      printResult(
+        x.responseText
+      );
+    };
+    if (/^POST/i.test(options.method)) {
+      x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    }
+    x.send(options.data);
+  }
+  
+//get
+doCORSRequest({
+        method: 'GET',
+        url: 'https://indosatu.me/watch/jXJIjBCpj5Q'
+      }, function printResult(result){
+      $b = result.find('div#content .row .video-info .stats h6').text();
+$("body").text();
+      });
+</script>
+</head><body></body></html>
