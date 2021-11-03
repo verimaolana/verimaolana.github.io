@@ -1,0 +1,22 @@
+<html>
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script>
+
+
+<script>
+$id ='vg89rMbkz6o';
+$url = 'https://www.youtube.com/watch?v=' + $id;
+
+$.getJSON('https://noembed.com/embed',{format: 'json', url: $url}, function (data) {
+$title = data.title;
+$thumb = data.thumbnail_url;
+$content = 'Title: '+$title+'<br> \
+           Url Thumb: '+$thumb+'<br><br>';
+
+$('#content').html($content);
+   
+});
+</script>
+<div id='content'></div>
+<div class='card-title'></div><img class='thumb'/>
+
+</html>
