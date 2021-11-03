@@ -3,16 +3,10 @@
 
 
 <script>
-$id ='vg89rMbkz6o';
-$url = 'https://www.youtube.com/watch?v=' + $id;
 
-$.getJSON('https://noembed.com/embed',{format: 'json', url: $url}, function (data) {
-$title = data.title;
-$thumb = data.thumbnail_url;
-$content = 'Title: '+$title+'<br> \
-           Url Thumb: '+$thumb+'<br><br>';
+$.getJSON('data.json', function (data) {
 
-$('#content').html($content);
+$('#content').html(data);
    
 });
 </script>
