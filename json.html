@@ -2,7 +2,7 @@
 <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script>
 <script>
 $.getJSON('data.json', function (data) {
-$('#content').html(data.naruto.opening[0]);  
+$('#content').text(data.naruto.opening[0].id);  
 });
 </script>
 <div id='content'>b</div>
