@@ -2,9 +2,9 @@
 <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script>
 <script>
 $.getJSON('data.json', function (data) {
-$('#content').html(data['naruto'][opening]);  
+$('#content').html(data.naruto.opening[0]);  
 });
 </script>
-<div id='content'>a</div>
+<div id='content'>b</div>
 <div class='card-title'></div><img class='thumb'/>
 </html>
