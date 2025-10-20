@@ -1,0 +1,119 @@
+<!doctype html>
+
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kalkulator Spread Emas</title>
+  <style>
+    :root{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:#0f172a}
+    body{background:#f8fafc;padding:24px;}
+    .card{max-width:660px;margin:0 auto;background:#fff;border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.08)}
+    h1{font-size:20px;margin:0 0 8px}
+    p.sub{margin:0 0 16px;color:#475569}
+    label{display:block;margin-top:12px;font-weight:600;font-size:13px}
+    input[type=number]{width:300px;padding:10px;border-radius:8px;border:1px solid #e2e8f0;margin-top:6px;font-size:15px}
+    .row{display:flex;gap:12px}
+    .col{flex:1}
+    button{margin-top:14px;padding:10px 12px;border-radius:8px;border:0;background:#0ea5a4;color:white;font-weight:700;cursor:pointer}
+    .result{margin-top:16px;padding:14px;border-radius:10px;background:#f1f5f9;border:1px solid #e2e8f0}
+    .badge{display:inline-block;padding:6px 8px;border-radius:999px;font-weight:700}
+    .good{background:#ecfdf5;color:#065f46}
+    .warn{background:#fff7ed;color:#92400e}
+    .bad{background:#fff1f2;color:#981b1b}
+    small{color:#64748b}
+    .foot{margin-top:14px;color:#64748b;font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Kalkulator Spread Emas</h1>
+    <p class="sub">Masukkan <strong>Harga Beli (Antam)</strong> dan <strong>Harga Jual</strong> untuk menghitung spread nominal &amp; persentase.
+</p>
+      <div class="row">
+        <div class="col">
+<label for="hargaBeli">Harga Beli (Rp/gram)</label>
+<input id="hargaBeli" type="number" min="0" step="1" placeholder="Contoh: 1273000" />
+</div>
+  <div class="col">
+    <label for="hargaJual">Harga Jual (Rp/gram)</label>
+    <input id="hargaJual" type="number" min="0" step="1" placeholder="Contoh: 1340000" />
+</div>
+</div>
+<div class="row">
+  <div class="col">
+    <label for="gram">Berat (gram) — opsional</label>
+    <input id="gram" type="number" min="0" step="0.01" placeholder="Contoh: 10" />
+  </div>
+  <div class="col">
+    <label for="tombol"> </label>
+    <button id="hitungBtn" onclick="hitungSpread()">Hitung Spread</button>
+  </div>
+</div>
+
+<div id="hasil" class="result" style="display:none;">
+  <div><strong>Spread nominal:</strong> <span id="spreadNominal"></span> Rp/gram</div>
+  <div style="margin-top:8px;"><strong>Spread persentase:</strong> <span id="spreadPersen"></span> %</div>
+  <div style="margin-top:8px;"><strong>Kerugian awal (total):</strong> <span id="kerugianTotal"></span> Rp</div>
+  <div style="margin-top:12px;"><strong>Saran:</strong> <span id="saran"></span></div>
+  <div style="margin-top:10px;"><small>Catatan: rekomendasi berdasarkan aturan sederhana: &le;5% = bagus, 6–7% = hati-hati, &gt;=8% = tunda.</small></div>
+</div>
+
+<div class="foot">Tips: untuk keputusan beli, gabungkan hasil spread ini dengan pantauan tren harga (apakah harga baru naik tajam/volatile). Spread kecil + tren stabil = momen beli yang ideal.</div>
+
+  </div>  <script>
+    function formatRp(n){
+      if (n===null || isNaN(n)) return '-';
+      return Number(n).toLocaleString('id-ID');
+    }
+
+    function hitungSpread(){
+      const jual = Number(document.getElementById('hargaJual').value);
+      const beli = Number(document.getElementById('hargaBeli').value);
+      const gram = Number(document.getElementById('gram').value) || 0;
+      const hasilDiv = document.getElementById('hasil');
+
+      if (!jual || !beli || jual <= 0 || beli <= 0){
+        alert('Masukkan Harga Jual dan Harga Buyback yang valid.');
+        return;
+      }
+      if (beli > jual){
+        if (!confirm('Harga buyback lebih besar dari harga jual. Lanjutkan?')) return;
+      }
+
+      const spreadNominal = jual - beli;
+      const spreadPersen = (spreadNominal / beli) * 100;
+      const kerugianTotal = gram > 0 ? Math.round(spreadNominal * gram) : Math.round(spreadNominal);
+
+      document.getElementById('spreadNominal').textContent = formatRp(spreadNominal);
+      document.getElementById('spreadPersen').textContent = spreadPersen.toFixed(2);
+      document.getElementById('kerugianTotal').textContent = formatRp(kerugianTotal);
+
+      // Saran sederhana
+      let saranText = '';
+      let badgeClass = '';
+      if (spreadPersen <= 5){
+        saranText = 'Bagus untuk beli (spread kecil). Pertimbangkan akumulasi bertahap.';
+        badgeClass = 'good';
+      } else if (spreadPersen <= 7){
+        saranText = 'Hati-hati. Spread sedang agak tinggi; pertimbangkan menunggu koreksi kecil.';
+        badgeClass = 'warn';
+      } else {
+        saranText = 'Tunda pembelian jika tujuan jangka pendek. Spread tinggi — pasar kemungkinan euforia.';
+        badgeClass = 'bad';
+      }
+
+      const spanSaran = document.getElementById('saran');
+      spanSaran.innerHTML = '<span class="badge ' + (badgeClass==='good'?'good':badgeClass==='warn'?'warn':'bad') + '">' + saranText + '</span>';
+
+      hasilDiv.style.display = 'block';
+    }
+
+    // Optional: quick example values
+    (function setExample(){
+      document.getElementById('hargaJual').value = '';
+      document.getElementById('hargaBeli').value = '';
+      document.getElementById('gram').value = '';
+    })();
+  </script></body>
+</html>
