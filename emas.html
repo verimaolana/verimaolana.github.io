@@ -1,14 +1,14 @@
 <!doctype html>
-
 <html lang="id">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Kalkulator Spread Emas</title>
   <style>
+*{margin:0;padding:0}
     :root{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:#0f172a}
-    body{background:#f8fafc;padding:24px;}
-    .card{max-width:660px;margin:0 auto;background:#fff;border-radius:12px;padding:20px;box-shadow:0 6px 20px rgba(2,6,23,0.08)}
+    body{background:#f8fafc}
+    .card{max-width:660px;margin:0 auto;background:#fff;margin:20px}
     h1{font-size:20px;margin:0 0 8px}
     p.sub{margin:0 0 16px;color:#475569}
     label{display:block;margin-top:12px;font-weight:600;font-size:13px}
@@ -27,28 +27,20 @@
 </head>
 <body>
   <div class="card">
-    <h1>Kalkulator Spread Emas</h1>
+    <center><h1>Kalkulator Spread Emas</h1></center>
     <p class="sub">Masukkan <strong>Harga Beli (Antam)</strong> dan <strong>Harga Jual</strong> untuk menghitung spread nominal &amp; persentase.
 </p>
-      <div class="row">
-        <div class="col">
+      
 <label for="hargaBeli">Harga Beli (Rp/gram)</label>
 <input id="hargaBeli" type="number" min="0" step="1" placeholder="Contoh: 1273000" />
-</div>
-  <div class="col">
+
     <label for="hargaJual">Harga Jual (Rp/gram)</label>
     <input id="hargaJual" type="number" min="0" step="1" placeholder="Contoh: 1340000" />
-</div>
-</div>
+
 <div class="row">
-  <div class="col">
-    <label for="gram">Berat (gram) — opsional</label>
-    <input id="gram" type="number" min="0" step="0.01" placeholder="Contoh: 10" />
-  </div>
-  <div class="col">
-    <label for="tombol"> </label>
+    <input id="gram" type="hidden" value="1"/>
     <button id="hitungBtn" onclick="hitungSpread()">Hitung Spread</button>
-  </div>
+  
 </div>
 
 <div id="hasil" class="result" style="display:none;">
