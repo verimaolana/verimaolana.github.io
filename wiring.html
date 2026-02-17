@@ -1,0 +1,220 @@
+<!doctype html>
+
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wiring Photo Editor — ortho mode</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;margin:20px;background:#f6f7fb;color:#111}
+    .controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+    .container{position:relative;display:inline-block;border:1px solid #ddd;background:white}
+    canvas{display:block;max-width:1000px;height:auto}
+    button{padding:8px 10px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer}
+    .palette{display:flex;gap:6px}
+    .swatch{width:26px;height:26px;border-radius:4px;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.05) inset}
+    .swatch.selected{outline:3px solid rgba(0,0,0,0.12);}
+    .hint{font-size:13px;color:#555;margin-top:8px}
+    input[type=range]{width:120px}
+  </style>
+</head>
+<body><h2>Wiring Photo Editor — Horizontal/Vertical Only</h2><div class="controls">
+  <label>Pilih gambar <input id="imgInput" type="file" accept="image/*"></label>  <div>Warna:
+    <div class="palette" id="palette"></div>
+    <input id="colorPicker" type="color">
+  </div>  <div>Ketebalan:
+    <input type="range" id="thickness" min="2" max="30" value="6">
+    <span id="thicknessVal">6</span> px
+  </div><button id="clearBtn">Clear</button> <button id="downloadBtn">Download PNG</button>
+
+</div><div class="container" id="canvasContainer" style="display:none">
+  <canvas id="imageCanvas"></canvas>
+  <canvas id="overlayCanvas" style="position:absolute;left:0;top:0"></canvas>
+</div><div class="hint">
+Upload gambar → pilih warna → atur ketebalan → drag dari titik A ke B.
+Garis otomatis hanya horizontal atau vertical.
+Jika garis berpapasan TANPA koneksi, akan muncul simbol jembatan kecil.
+Tekan Z untuk undo.
+</div><script>
+const imgInput = document.getElementById('imgInput');
+const imageCanvas = document.getElementById('imageCanvas');
+const overlayCanvas = document.getElementById('overlayCanvas');
+const container = document.getElementById('canvasContainer');
+const colorPicker = document.getElementById('colorPicker');
+const paletteEl = document.getElementById('palette');
+const downloadBtn = document.getElementById('downloadBtn');
+const clearBtn = document.getElementById('clearBtn');
+const thicknessSlider = document.getElementById('thickness');
+const thicknessVal = document.getElementById('thicknessVal');
+
+const imageCtx = imageCanvas.getContext('2d');
+const overlayCtx = overlayCanvas.getContext('2d');
+
+let lines = [];
+let drawing = false;
+let start = {x:0,y:0};
+let currentColor = '#ff0000';
+let currentThickness = 6;
+
+thicknessVal.textContent = currentThickness;
+thicknessSlider.addEventListener('input', e=>{
+  currentThickness = parseInt(e.target.value);
+  thicknessVal.textContent = currentThickness;
+});
+
+const presetColors = ['#ff0000','#ffaa00','#ffd500','#00cc00','#00aaff','#0044ff','#c400ff','#ffffff','#000000'];
+
+presetColors.forEach(c=>{
+  const d=document.createElement('div');
+  d.className='swatch';
+  d.style.background=c;
+  d.onclick=()=>{currentColor=c;colorPicker.value=c;updateSwatch(d)};
+  paletteEl.appendChild(d);
+});
+
+function updateSwatch(sel){
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('selected'));
+  if(sel) sel.classList.add('selected');
+}
+
+colorPicker.oninput=e=>{currentColor=e.target.value;updateSwatch(null)};
+
+imgInput.onchange=e=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=()=>{
+    imageCanvas.width=overlayCanvas.width=img.naturalWidth;
+    imageCanvas.height=overlayCanvas.height=img.naturalHeight;
+    imageCtx.drawImage(img,0,0);
+
+    const maxDisplay=1000;
+    const scale=Math.min(1,maxDisplay/img.naturalWidth);
+    imageCanvas.style.width=overlayCanvas.style.width=(img.naturalWidth*scale)+'px';
+    imageCanvas.style.height=overlayCanvas.style.height=(img.naturalHeight*scale)+'px';
+
+    container.style.display='inline-block';
+    lines=[];
+    redraw();
+    URL.revokeObjectURL(url);
+  }
+  img.src=url;
+}
+
+function getPos(evt){
+  const rect=overlayCanvas.getBoundingClientRect();
+  const x=(evt.clientX-rect.left)*(overlayCanvas.width/rect.width);
+  const y=(evt.clientY-rect.top)*(overlayCanvas.height/rect.height);
+  return {x:Math.round(x),y:Math.round(y)};
+}
+
+overlayCanvas.onmousedown=e=>{drawing=true;start=getPos(e)};
+overlayCanvas.onmousemove=e=>{
+  if(!drawing) return;
+  preview(getPos(e));
+}
+window.onmouseup=e=>{
+  if(!drawing) return;
+  drawing=false;
+  const end=getPos(e);
+  const fixed=orthogonal(start,end);
+  if(start.x!==fixed.x || start.y!==fixed.y){
+    lines.push({x1:start.x,y1:start.y,x2:fixed.x,y2:fixed.y,color:currentColor,thickness:currentThickness});
+  }
+  redraw();
+}
+
+function orthogonal(a,b){
+  const dx=Math.abs(b.x-a.x);
+  const dy=Math.abs(b.y-a.y);
+  if(dx>dy){return {x:b.x,y:a.y};}
+  else{return {x:a.x,y:b.y};}
+}
+
+function preview(pos){
+  redraw();
+  const fixed=orthogonal(start,pos);
+  drawLine(start.x,start.y,fixed.x,fixed.y,currentColor,currentThickness);
+}
+
+function drawLine(x1,y1,x2,y2,color,thick){
+  overlayCtx.lineWidth=thick;
+  overlayCtx.lineCap='round';
+  overlayCtx.strokeStyle=color;
+  overlayCtx.beginPath();
+  overlayCtx.moveTo(x1,y1);
+  overlayCtx.lineTo(x2,y2);
+  overlayCtx.stroke();
+}
+
+function redraw(){
+  overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  lines.forEach(l=>{
+    drawLine(l.x1,l.y1,l.x2,l.y2,l.color,l.thickness);
+  });
+  drawCrossIndicators();
+}
+
+function drawCrossIndicators(){
+  for(let i=0;i<lines.length;i++){
+    for(let j=i+1;j<lines.length;j++){
+      const p=intersection(lines[i],lines[j]);
+      if(p && !isConnected(lines[i],lines[j],p)){
+        drawBridge(p.x,p.y,Math.max(lines[i].thickness,lines[j].thickness));
+      }
+    }
+  }
+}
+
+function intersection(a,b){
+  if(a.x1===a.x2 && b.y1===b.y2){
+    if(inRange(b.x1,a.y1,b.x2) && inRange(a.x1,b.y1,a.x2)){
+      return {x:a.x1,y:b.y1};
+    }
+  }
+  if(a.y1===a.y2 && b.x1===b.x2){
+    if(inRange(a.x1,b.x1,a.x2) && inRange(b.y1,a.y1,b.y2)){
+      return {x:b.x1,y:a.y1};
+    }
+  }
+  return null;
+}
+
+function inRange(p,a,b){return (p>=Math.min(a,b)&&p<=Math.max(a,b));}
+
+function isConnected(a,b,p){
+  return ( (a.x1===p.x && a.y1===p.y) ||
+           (a.x2===p.x && a.y2===p.y) ||
+           (b.x1===p.x && b.y1===p.y) ||
+           (b.x2===p.x && b.y2===p.y) );
+}
+
+function drawBridge(x,y,size){
+  overlayCtx.strokeStyle='#000';
+  overlayCtx.lineWidth=2;
+  overlayCtx.beginPath();
+  overlayCtx.arc(x,y,size,0,Math.PI);
+  overlayCtx.stroke();
+}
+
+clearBtn.onclick=()=>{if(confirm('Hapus semua garis?')){lines=[];redraw();}};
+
+window.addEventListener('keydown',e=>{
+  if(e.key==='z'&&lines.length){lines.pop();redraw();}
+});
+
+downloadBtn.onclick=()=>{
+  const merged=document.createElement('canvas');
+  merged.width=imageCanvas.width;
+  merged.height=imageCanvas.height;
+  const ctx=merged.getContext('2d');
+  ctx.drawImage(imageCanvas,0,0);
+  ctx.drawImage(overlayCanvas,0,0);
+  const a=document.createElement('a');
+  a.href=merged.toDataURL('image/png');
+  a.download='wiring-export.png';
+  a.click();
+}
+</script></body>
+</html>
